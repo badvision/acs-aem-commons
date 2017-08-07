@@ -48,6 +48,11 @@ public class SimpleFilteringResourceVisitor {
         traversalFilter = filter;
     }
 
+    public final void setResourcesAndLeafVisitor(BiConsumer<Resource, Integer> handler) {
+        resourceVisitor = handler;
+        leafVisitor = handler;
+    }    
+    
     public final void setResourceVisitor(BiConsumer<Resource, Integer> handler) {
         resourceVisitor = handler;
     }
