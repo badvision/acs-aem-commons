@@ -21,9 +21,9 @@ import com.adobe.acs.commons.mcp.ProcessInstance;
 import com.adobe.acs.commons.mcp.form.FormField;
 import com.adobe.acs.commons.mcp.form.PathfieldComponent;
 import com.adobe.acs.commons.mcp.form.RadioComponent;
+import com.adobe.acs.commons.mcp.util.StringUtil;
 import com.adobe.acs.commons.util.visitors.SimpleFilteringResourceVisitor;
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -57,11 +57,11 @@ public class SetProperty implements ProcessDefinition {
     }
 
     private static enum PropertyType {
-        STRING(String.class, Function.identity(), Array::get), 
-        LONG(Long.TYPE, Long::parseLong, Array::getLong), 
-        DOUBLE(Double.TYPE, Double::parseDouble, Array::getDouble), 
-        BOOLEAN(Boolean.TYPE, Boolean::parseBoolean, Array::getBoolean), 
-        DATE(Date.class, SetProperty::parseDate, Array::get);
+        STRING(String.class, Function.identity(), Array::get),
+        LONG(Long.TYPE, Long::parseLong, Array::getLong),
+        DOUBLE(Double.TYPE, Double::parseDouble, Array::getDouble),
+        BOOLEAN(Boolean.TYPE, Boolean::parseBoolean, Array::getBoolean),
+        DATE(Date.class, StringUtil::parseDate, Array::get);
         Class clazz;
         Function<String, ? extends Object> parser;
         BiFunction<Object, Integer, ?> arrayGetter;
@@ -124,11 +124,11 @@ public class SetProperty implements ProcessDefinition {
     @FormField(
             name = "Property value",
             description = "Property value set according to the specified rule, value must match selected type",
-            hint = "12345, myTag:someTag, Dates can use NOW, NOW-1 (yesterday), etc."
+            hint = "12345, myTag:someTag, 2011-12-31, NOW, TODAY-7, YESTERDAY, etc."
     )
     private String propertyValue;
     private Object propertyObjectValue;
-    
+
     @FormField(
             name = "Set rule",
             description = "Rule to decide when property should be set and how to set it",
@@ -155,7 +155,7 @@ public class SetProperty implements ProcessDefinition {
 
         traverseTypeList = parseList(traverseTypes);
         targetNodeTypeList = parseList(targetNodeTypes);
-        
+
         propertyObjectValue = propertyType.parser.apply(propertyValue);
     }
 
@@ -221,7 +221,7 @@ public class SetProperty implements ProcessDefinition {
     private boolean hasPropertyInList(Map<String, Object> props, String key) {
         Object prop = props.get(key);
         if (prop != null) {
-            for (int i=0; i < Array.getLength(prop); i++)  {
+            for (int i = 0; i < Array.getLength(prop); i++) {
                 Object v = propertyType.arrayGetter.apply(prop, i);
                 if (v.equals(propertyObjectValue)) {
                     return true;
@@ -245,7 +245,7 @@ public class SetProperty implements ProcessDefinition {
         Object origArray = props.get(key);
         int len = Array.getLength(origArray);
         Object newArray = Array.newInstance(propertyType.clazz, len + 1);
-        for (int i=0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             Array.set(newArray, i, Array.get(origArray, i));
         }
         Array.set(newArray, len, propertyObjectValue);
@@ -260,9 +260,5 @@ public class SetProperty implements ProcessDefinition {
                     .map(String::trim).map(String::toLowerCase)
                     .filter(s -> !s.isEmpty()).collect(Collectors.toList());
         }
-    }
-    
-    private static Date parseDate(String dateStr) {
-        return null;
     }
 }

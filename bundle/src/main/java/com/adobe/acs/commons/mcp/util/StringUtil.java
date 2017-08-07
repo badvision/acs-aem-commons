@@ -15,6 +15,12 @@
  */
 package com.adobe.acs.commons.mcp.util;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
@@ -35,6 +41,49 @@ public class StringUtil {
     public static boolean isHex(String str) {
         return str.matches("^[0-9A-Fa-f-]+$");
     }
+    
+    /**
+     * Try parsing a date string many numbers of ways.
+     * Formats include YYYY-MM-DD, or local defaults (see the SimpleDateFormat javadocs).
+     * Also understands things like "today+7" which is one week from today, "yesterday", "now", "tomorrow" and so on.
+     * @param dateStr Date string, which could be one of several formats
+     * @return Date if parsed.  Null if not parsed.
+     */
+    public static Date parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) {
+            return null;
+        }
+        dateStr = dateStr.trim().toLowerCase();
+        if (dateStr.charAt(0) >= 'a') {
+            LocalDateTime temporal = null;
+            if (dateStr.startsWith("now")) {
+                temporal = LocalDateTime.now();
+            } else if (dateStr.startsWith("today")) {
+                temporal = LocalDate.now().atStartOfDay();
+            } else if (dateStr.startsWith("yesterday")) {
+                temporal = LocalDate.now().minusDays(1).atStartOfDay();
+            } else if (dateStr.startsWith("tomorrow")) {
+                temporal = LocalDate.now().plusDays(1).atStartOfDay();
+            }
+
+            if (temporal != null) {
+                if (dateStr.contains("+")) {
+                    int days = Integer.parseInt(dateStr.substring(dateStr.indexOf('+') + 1).trim());
+                    temporal = temporal.plusDays(days);
+                } else if (dateStr.contains("-")) {
+                    int days = Integer.parseInt(dateStr.substring(dateStr.indexOf('-') + 1).trim());
+                    temporal = temporal.minusDays(days);
+                }
+                return Date.from(temporal.atZone(ZoneId.systemDefault()).toInstant());
+            }
+        }
+        try {
+            SimpleDateFormat.getDateInstance().parse(dateStr);
+        } catch (ParseException ex) {
+            return Date.from(LocalDate.parse(dateStr).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        }
+        return null;
+    }    
     
     private StringUtil() {
         // Utility class has no constructuor.
