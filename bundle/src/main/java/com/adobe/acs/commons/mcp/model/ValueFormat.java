@@ -61,10 +61,10 @@ public enum ValueFormat {
         }
         Long bytes = (val instanceof Long) ? (Long) val : Long.parseLong(String.valueOf(val));
         if (bytes < 1024) {
-            return bytes + " b";
+            return bytes + " B";
         }
         int exp = (int) (Math.log(bytes) / Math.log(1024));
-        char pre = "kmgtpe".charAt(exp - 1);
-        return String.format("%.1f %cb", bytes / Math.pow(1024, exp), pre);
+        char pre = "kMGTPE".charAt(exp - 1);
+        return String.format("%.1f %cB", bytes / Math.pow(1024, exp), pre);
     }
 }
